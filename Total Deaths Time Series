@@ -1,0 +1,57 @@
+import requests
+import cufflinks as cf
+import unicodedata
+from datetime import datetime
+import lxml.html as lh
+import pandas as pd
+import seaborn as sns
+from bs4 import BeautifulSoup
+from requests import get
+import matplotlib.pyplot as plt
+from plotly import __version__
+from plotly.offline import download_plotlyjs, init_notebook_mode, plot, iplot
+import plotly.graph_objects as go
+sns.set(style="whitegrid")
+init_notebook_mode(connected=True)
+cf.go_offline()
+
+## Use this site: https://www.worldometers.info/coronavirus/worldwide-graphs/#countries-cases
+
+## First, get new soup
+url_2 = 'https://www.worldometers.info/coronavirus/worldwide-graphs/#countries-cases'
+response_2 = get(url_2)
+html_soup_2 = BeautifulSoup(response_2.text,'html.parser')
+
+## Then, we can pull the dates from this soup
+date = html_soup_2.find_all('div',align='left')
+dates = []
+date_time = []
+
+## For-Loop Creating the list
+for i in range(len(date)):
+    dates.append(date[i].get_text().replace('\xa0',''))
+
+## For-Loop but changes it to datetime
+for i in range(5):
+    date_time.append(datetime.strptime(date[i].get_text().replace('\xa0',''),'%b. %d').date().replace(year=2020))
+
+    
+## Test object to mess around with on more granular basis
+## datetime.strptime(date[10].get_text().replace('\xa0',''),'%b. %d').date().replace(year=2020)
+
+## Pulling total deaths
+death = html_soup_2.find_all('td',align='right')
+deaths = []
+
+## For Loop for Deaths
+for i in range(0,150,3):
+    deaths.append(int(death[i].get_text().replace(',','')))
+
+## Put Both in a dataframe
+rona_rona = pd.DataFrame(list(zip(deaths,date_time)),columns=('Total_Deaths','Date'))
+
+## Initialize the matplotlib figure
+f, ax = plt.subplots(figsize=(14, 6))
+
+## Plot Graph
+sns.lineplot(x='Date',y='Total_Deaths',data=rona_rona,palette="tab10",color='r', linewidth=3)
