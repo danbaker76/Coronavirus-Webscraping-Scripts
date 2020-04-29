@@ -1,0 +1,78 @@
+import requests
+import cufflinks as cf
+import unicodedata
+from datetime import datetime
+import lxml.html as lh
+import pandas as pd
+import seaborn as sns
+from bs4 import BeautifulSoup
+from requests import get
+import matplotlib.pyplot as plt
+from plotly import __version__
+from plotly.offline import download_plotlyjs, init_notebook_mode, plot, iplot
+import plotly.graph_objects as go
+sns.set(style="whitegrid")
+init_notebook_mode(connected=True)
+cf.go_offline()
+
+## Scrapes Webpages & Parses HTML
+url = 'https://www.worldometers.info/coronavirus/'
+response = get(url)
+html_soup = BeautifulSoup(response.text,'html.parser')
+
+## Creating the Individual Lists with Data
+
+## Getting the HTML Lines with Country Name
+country = html_soup.find_all('a',class_='mt_a')
+
+## Empty List to fill
+countries = []
+
+## For-Loop that creates a list with Top 10 Countries (filters)
+for i in range(10):
+    countries.append(country[i].get_text())
+    
+## Getting Number of Total Cases (in full HTML)
+total_case = html_soup.find_all('td',style='font-weight: bold; text-align:right')
+
+## Empty List to fill
+total_cases = []
+
+## For-Loop that creates a list with Total Corona Cases (also removes the comma)
+for i in range(0,70,7):
+    total_cases.append(int(total_case[i].get_text().replace(',','')))
+
+    
+## Getting HTML lines with Total Deaths
+total_death = html_soup.find_all('td',style="font-weight: bold; text-align:right;")
+
+## Empty List to Fill
+total_deaths = []
+
+## For-Loop to Create a list with Deaths
+for i in range(1,70):
+    total_deaths.append(total_death[i].get_text().replace(',',''))
+
+total_deathss = list(filter(None, total_deaths)) 
+
+        
+    
+### Creating the DataFrame
+corona = pd.DataFrame(list(zip(countries,total_cases,total_deaths)),columns=('Country','Total_Cases','Total_Deaths'))
+
+###### Initialize the matplotlib figure
+f, ax = plt.subplots(figsize=(6, 6))
+
+# Plot the total cases
+sns.set_color_codes("pastel")
+sns.barplot(x="Total_Cases", y="Country", data=corona,
+            label="Total Cases", color="b")
+
+# Plot the total deaths
+sns.set_color_codes("muted")
+sns.barplot(x="Total_Deaths", y="Country", data=corona,
+            label="Total Deaths", color="b")
+
+# Add a legend and informative axis label
+ax.set(ylabel="Total Cases",
+       xlabel="Total Deaths & Total Cases By Country")
